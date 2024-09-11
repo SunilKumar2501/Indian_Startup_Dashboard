@@ -203,22 +203,22 @@ def company_details(name):
     col1,col2,col3 = st.columns(3)
     # Industry
     with col1:
-        industry = df[df["startup"] == name]["vertical"].values
+        industry = df[df["startup"] == name]["vertical"].drop_duplicates()
         st.subheader("Industry of the Company")
-        st.write(industry)
+        st.write(industry.values)
     with col2:
-        industry = df[df["startup"] == name]["subVertical"].values
+        industry = df[df["startup"] == name]["subVertical"].drop_duplicates()
         st.subheader("Sub Industry of the Company")
-        st.write(industry)
+        st.write(industry.values)
 
     with col3:
-        industry = df[df["startup"] == name]["city"].values
+        industry = df[df["startup"] == name]["city"].drop_duplicates()
         st.subheader("City of the Company")
-        st.write(industry)
+        st.write(industry.values)
     st.subheader("Funding Rounds")
     temp_df = df.copy()
     temp_df["date"] = temp_df["date"].astype("str")
-    details = temp_df[temp_df["startup"]== name][["round","investors","date"]].set_index("round")
+    details = temp_df[temp_df["startup"]== name][["round","investors","date","amount"]].set_index("round")
     st.dataframe(details)
 
     st.subheader("Similar Company")
