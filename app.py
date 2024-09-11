@@ -21,6 +21,7 @@ df.replace({
     "Flipkart.com": "Flipkart"
 },inplace = True)
 df["startup"].replace({'"BYJU\\\\\'S"': "Byju's"}, inplace=True)
+df.replace({"https://www.wealthbucket.in/" : "WealthBucket"},inplace = True)
 
 def load_overall_analysis():
     #total invested amount
@@ -185,6 +186,50 @@ def load_investor_detail(investor):
         fig, ax = plt.subplots()
         ax.plot(val, year_series.values)
         st.pyplot(fig)
+    with col6:
+        st.subheader("Similar Investors with regards to Sectors ")
+        investor = df[df["investors"].str.contains(investor)]
+        # Check for overlapping verticals between investor and df DataFrames
+        matching_verticals = np.intersect1d((investor["vertical"]), (df["vertical"].unique()))
+        v = list(matching_verticals)
+        # Filter based on matching verticals
+        filtered_df = df[df["vertical"].isin(v)][["startup", "vertical", 'investors']].set_index("vertical")
+        st.dataframe(filtered_df)
+
+
+
+def company_details(name):
+    st.title(name)
+    col1,col2,col3 = st.columns(3)
+    # Industry
+    with col1:
+        industry = df[df["startup"] == name]["vertical"].values
+        st.subheader("Industry of the Company")
+        st.write(industry)
+    with col2:
+        industry = df[df["startup"] == name]["subVertical"].values
+        st.subheader("Sub Industry of the Company")
+        st.write(industry)
+
+    with col3:
+        industry = df[df["startup"] == name]["city"].values
+        st.subheader("City of the Company")
+        st.write(industry)
+    st.subheader("Funding Rounds")
+    temp_df = df.copy()
+    temp_df["date"] = temp_df["date"].astype("str")
+    details = temp_df[temp_df["startup"]== name][["round","investors","date"]].set_index("round")
+    st.dataframe(details)
+
+    st.subheader("Similar Company")
+    temp_df = df.copy()
+    temp_df["date"] = temp_df["date"].astype("str")
+    s = df[df["startup"] == name]
+    v = s["subVertical"].unique()
+    v_list = list(v)
+    filtered_df = temp_df[temp_df["subVertical"].isin(v_list)][["startup","subVertical","date"]].set_index("startup")
+    st.dataframe(filtered_df)
+
 
 st.sidebar.title("Startup Funding Analysis")
 
@@ -195,9 +240,13 @@ if option == "Overall Analysis":
     btn0 = st.sidebar.button("Show Overall analysis")
     load_overall_analysis()
 elif option == "Startup":
-    st.sidebar.selectbox("Select Startup",sorted(df["startup"].unique().tolist()))
+    selected = st.sidebar.selectbox("Select Startup",sorted(df["startup"].unique().tolist()))
     button1 = st.sidebar.button("Find Startup Details")
-    st.title("Startup Analysis")
+    # st.title("Startup Analysis")
+    print(button1)
+    if button1:
+        company_details(selected)
+
 else:
     selected = st.sidebar.selectbox("Select Startup", lst)
     button2 = st.sidebar.button("Find Investor Details")
