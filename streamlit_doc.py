@@ -83,3 +83,5 @@ file = st.file_uploader("Upload a csv file")
 if file is not None:
     df = pd.read_csv(file)
     st.dataframe(df.describe())
+
+st.title("Checking pull request in github")
