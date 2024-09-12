@@ -139,63 +139,78 @@ def load_overall_analysis():
 def load_investor_detail(investor):
     st.title(investor)
     # load last 5 investments of the investor
-    last5df = df[df["investors"].str.contains(investor)].head()[["date", "startup", "vertical", "city", "round", "amount"]]
+    last5df = df[df["investors"].str.contains(investor)].head()[["date","startup", "vertical", "city", "round", "amount"]].set_index("date")
     st.subheader("Most Recent Investments")
     st.dataframe(last5df)
 
+    try:
     #biggest investments
-    col1,col2 = st.columns(2)
-    with col1:
-        biggest_inv = df[df["investors"].str.contains(investor)].groupby("startup")["amount"].sum().sort_values(ascending=False).head(5)
-        st.subheader("Biggest Investments")
-        st.dataframe(biggest_inv)
-        st.write("Bar Graph Representation")
-        fig, ax = plt.subplots()
-        ax.bar(biggest_inv.index, biggest_inv.values)
-        st.pyplot(fig)
-    with col2:
+        col1,col2 = st.columns(2)
+        with col1:
+            biggest_inv = df[df["investors"].str.contains(investor)].groupby("startup")["amount"].sum().sort_values(ascending=False).head(5)
+            st.subheader("Biggest Investments")
+            st.dataframe(biggest_inv)
+            st.write("Bar Graph Representation")
+            fig, ax = plt.subplots()
+            ax.bar(biggest_inv.index, biggest_inv.values)
+            st.pyplot(fig)
+        with col2:
+            vertical_series = df[df["investors"].str.contains(investor)].groupby("vertical")["amount"].sum()
+
+            if vertical_series.empty:
+                st.warning(f"No data found for investor: {investor}")
+                return
+
+            st.subheader("Biggest Sectors Invested")
+            st.dataframe(vertical_series.head(5))
+            st.subheader("Sector invested in ")
+            fig, ax = plt.subplots()
+            ax.pie(vertical_series, labels=vertical_series.index, autopct="%0.01f%%")
+            st.pyplot(fig)
+
+        col3, col4 = st.columns(2)
+        with col3:
+            rounds_series = df[df["investors"].str.contains(investor)].groupby("round")["amount"].sum()
+            st.subheader("Rounds Stage ")
+            fig, ax = plt.subplots()
+            ax.pie(rounds_series, labels=rounds_series.index, autopct="%0.01f%%")
+            st.pyplot(fig)
+
+        with col4:
+            city_series = df[df["investors"].str.contains(investor)].groupby("city")["amount"].sum()
+            st.subheader("Most Invested City")
+            fig, ax = plt.subplots()
+            ax.pie(city_series, labels=city_series.index, autopct="%0.01f%%")
+            st.pyplot(fig)
+
+        col5, col6 = st.columns(2)
+        with col5:
+            year_series = df[df["investors"].str.contains(investor)].groupby("year")["amount"].sum()
+            st.subheader("Year on Year Investments")
+            val = year_series.index.astype("str")
+            fig, ax = plt.subplots()
+            ax.plot(val, year_series.values)
+            st.pyplot(fig)
+        with col6:
+            st.subheader("Similar Investors with regards to Sectors ")
+            investor = df[df["investors"].str.contains(investor)]
+            # Check for overlapping verticals between investor and df DataFrames
+            matching_verticals = np.intersect1d((investor["vertical"]), (df["vertical"].unique()))
+            v = list(matching_verticals)
+            # Filter based on matching verticals
+            filtered_df = df[df["vertical"].isin(v)][["startup", "vertical", 'investors']].set_index("vertical")
+            st.dataframe(filtered_df)
+
+    except:
+        st.error(f"Data is not enough for further analysis")
         #sector invested
-        vertical_series = df[df["investors"].str.contains(investor)].groupby("vertical")["amount"].sum()
-        st.subheader("Biggest Sectors Invested")
-        st.dataframe(vertical_series.head(5))
-        st.subheader("Sector invested in ")
-        fig, ax = plt.subplots()
-        ax.pie(vertical_series,labels = vertical_series.index,autopct = "%0.01f%%")
-        st.pyplot(fig)
-
-    col3,col4 = st.columns(2)
-    with col3:
-        rounds_series = df[df["investors"].str.contains(investor)].groupby("round")["amount"].sum()
-        st.subheader("Rounds Stage ")
-        fig, ax = plt.subplots()
-        ax.pie(rounds_series,labels = rounds_series.index,autopct = "%0.01f%%")
-        st.pyplot(fig)
-
-    with col4:
-        city_series = df[df["investors"].str.contains(investor)].groupby("city")["amount"].sum()
-        st.subheader("Most Invested City")
-        fig, ax = plt.subplots()
-        ax.pie(city_series,labels = city_series.index,autopct = "%0.01f%%")
-        st.pyplot(fig)
-
-    col5,col6 = st.columns(2)
-    with col5:
-        year_series = df[df["investors"].str.contains(investor)].groupby("year")["amount"].sum()
-        st.subheader("Year on Year Investments")
-        val = year_series.index.astype("str")
-        fig, ax = plt.subplots()
-        ax.plot(val, year_series.values)
-        st.pyplot(fig)
-    with col6:
-        st.subheader("Similar Investors with regards to Sectors ")
-        investor = df[df["investors"].str.contains(investor)]
-        # Check for overlapping verticals between investor and df DataFrames
-        matching_verticals = np.intersect1d((investor["vertical"]), (df["vertical"].unique()))
-        v = list(matching_verticals)
-        # Filter based on matching verticals
-        filtered_df = df[df["vertical"].isin(v)][["startup", "vertical", 'investors']].set_index("vertical")
-        st.dataframe(filtered_df)
-
+        # vertical_series = df[df["investors"].str.contains(investor)].groupby("vertical")["amount"].sum()
+        # st.subheader("Biggest Sectors Invested")
+        # st.dataframe(vertical_series.head(5))
+        # st.subheader("Sector invested in ")
+        # fig, ax = plt.subplots()
+        # ax.pie(vertical_series,labels = vertical_series.index,autopct = "%0.01f%%")
+        # st.pyplot(fig)
 
 
 def company_details(name):
@@ -225,9 +240,10 @@ def company_details(name):
     temp_df = df.copy()
     temp_df["date"] = temp_df["date"].astype("str")
     s = df[df["startup"] == name]
-    v = s["subVertical"].unique()
+    v = s["subVertical"].dropna().unique()
     v_list = list(v)
     filtered_df = temp_df[temp_df["subVertical"].isin(v_list)][["startup","subVertical","date"]].set_index("startup")
+
     st.dataframe(filtered_df)
 
 
