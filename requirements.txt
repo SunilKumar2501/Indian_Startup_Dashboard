@@ -2,3 +2,4 @@ matplotlib
 seaborn
 pandas
 numpy
+streamlit

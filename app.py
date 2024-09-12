@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 st.set_page_config(layout = "wide",page_title="Indian Startup Analysis")
-
+st.title("Data Analysis of Indian Startup Dataset")
 # some data preprocessing
 df = pd.read_csv("startup_clean.csv")
 df["investors"] = df["investors"].fillna("Undisclosed")
